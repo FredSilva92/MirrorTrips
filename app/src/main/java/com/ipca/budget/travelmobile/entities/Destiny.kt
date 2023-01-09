@@ -13,6 +13,20 @@ class Destiny {
     var airport: String? = null
     var cityHotel: String? = null
 
+    fun toJSON() : JSONObject{
+        val jsonObject = JSONObject()
+        jsonObject.put("name", name)
+        jsonObject.put("country", country)
+        jsonObject.put("image", image)
+        jsonObject.put("apiTime"    , apiTime)
+        jsonObject.put("description" , description)
+        jsonObject.put("tourismLink" , tourismLink)
+        jsonObject.put("youtubeLink" , youtubeLink)
+        jsonObject.put("airport" , airport)
+
+        return jsonObject
+    }
+
     companion object {
         fun fromJSON(jsonObject: JSONObject) : Destiny {
             return Destiny().apply {

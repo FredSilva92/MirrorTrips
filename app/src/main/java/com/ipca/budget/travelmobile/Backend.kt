@@ -1,6 +1,12 @@
 package com.ipca.budget.travelmobile
 
+import android.content.ContentValues.TAG
 import android.content.res.AssetManager
+import android.util.Log
+import com.google.firebase.firestore.ktx.firestore
+import com.google.firebase.ktx.Firebase
+import com.google.gson.Gson
+import com.ipca.budget.travelmobile.entities.ButtonsVacType
 import com.ipca.budget.travelmobile.entities.DataType
 import com.ipca.budget.travelmobile.entities.Destiny
 import kotlinx.coroutines.CoroutineScope
@@ -14,53 +20,152 @@ import java.io.InputStream
 import org.json.JSONObject
 
 object Backend {
-    fun fetchDestinies(scope: CoroutineScope, assets: AssetManager, dataType: DataType, destinies: ArrayList<Destiny>)  {
-        scope.launch (Dispatchers.IO){
-            var json: String? = null
 
-            try {
-                val inputStream: InputStream = assets.open("destinies.json")
-                json = inputStream.bufferedReader().use { it.readText() }
+    val client = OkHttpClient()
+    val db = Firebase.firestore
 
-                print(json)
-
-                val jsonObj = JSONObject(json.substring(json.indexOf("{"), json.lastIndexOf("}") + 1))
+    fun fetchDestinies(scope: CoroutineScope, assets: AssetManager, dataType: DataType, callback: (ArrayList<Destiny>)->Unit)  {
 
 
-                val result: JSONArray? =  jsonObj
-                    .getJSONObject(dataType.main?.typeStr)
-                    .getJSONObject(dataType.secondary?.typeStr)
-                    .getJSONArray(dataType.price?.typeStr)
+        var result: JSONArray
+        var result2: JSONArray
 
-                print(result)
+        scope.launch(Dispatchers.IO) {
+            db.collection("destiniesCol")
+                .get()
+                .addOnSuccessListener { result ->
 
-                if (result != null) {
-                    for(index in 0..result.length()) {
-                        destinies.add(Destiny.fromJSON(result.getJSONObject(index)))
+                    for (document in result) {
+
+                        if (dataType.main?.id == document.id) {
+                            Log.d(TAG, "${document.id} => ${document.data}")
+
+                            val secondRes =  document.data.get(dataType.secondary?.id)
+
+                            val gson = Gson()
+
+                            var result = JSONObject(gson.toJson(secondRes)).get(dataType.price?.typeStr) as JSONArray
+                            val destinies = ArrayList<Destiny>()
+
+                            if (result != null) {
+                                for(index in 0 until result.length()) {
+                                    destinies.add(Destiny.fromJSON(result.getJSONObject(index)))
+                                }
+                            }
+
+                            scope.launch (Dispatchers.Main){
+                                callback(destinies)
+                            }
+
+
+                            Log.d(TAG, secondRes.toString())
+
+                            break
+                        }
+
+
                     }
                 }
-
-
-            } catch (e: IOException) {
-
-            }
+                .addOnFailureListener { exception ->
+                    //Log.w(TAG, "Error getting documents.", exception)
+                }
         }
+
+/*
+        try {
+
+            result =  getJsonData(assets, "destinies.json")
+                .getJSONObject(dataType.main?.id)
+                .getJSONObject(dataType.secondary?.id)
+                .getJSONArray(dataType.price?.typeStr)
+
+            print(result)
+
+            if (result != null) {
+                for(index in 0 until result.length()) {
+                    destinies.add(Destiny.fromJSON(result.getJSONObject(index)))
+                }
+            }
+
+
+        } catch (e: IOException) {
+            throw Exception()
+        }*/
     }
 
-    fun fetchHotels(scope: CoroutineScope) {
-        //scope.launch (Dispatchers.IO){
-            val client = OkHttpClient()
+    fun fetchButtonsVacType(scope: CoroutineScope, mainType: String, callback: (ArrayList<ButtonsVacType>)->Unit) {
+
+
+        scope.launch(Dispatchers.IO) {
+            db.collection("vacTypeButtonsData")
+                .get()
+                .addOnSuccessListener { result ->
+
+                    for (document in result) {
+
+                        if (mainType == document.id) {
+                            val gson = Gson()
+                            var result = JSONObject(gson.toJson(document.data))
+
+                            val buttonsVacType = ArrayList<ButtonsVacType>()
+
+                            if (result != null) {
+                                for(index in 0 until result.length()) {
+                                    buttonsVacType.add(ButtonsVacType.fromJSON(result.getJSONObject(index.toString())))
+                                }
+                            }
+
+                            scope.launch (Dispatchers.Main){
+                                callback(buttonsVacType)
+                            }
+
+                            break
+                        }
+
+
+                    }
+                }
+                .addOnFailureListener { exception ->
+                    //Log.w(TAG, "Error getting documents.", exception)
+                }
+        }
+
+
+    }
+
+    fun fetchHotel(scope: CoroutineScope, place: String?, country: String?,
+                   callback: (String) -> Unit) {
+
+
+        scope.launch (Dispatchers.IO){
 
             val request = Request.Builder()
-                .url("https://apidojo-booking-v1.p.rapidapi.com/currency/get-exchange-rates?base_currency=USD&languagecode=en-us")
+                .url("https://best-booking-com-hotel.p.rapidapi.com/booking/best-accommodation?cityName=$place&countryName=$country")
                 .get()
                 .addHeader("X-RapidAPI-Key", "fd9bda0a96mshd382468d93681e7p11744ajsn18f453e98759")
-                .addHeader("X-RapidAPI-Host", "apidojo-booking-v1.p.rapidapi.com")
+                .addHeader("X-RapidAPI-Host", "best-booking-com-hotel.p.rapidapi.com")
                 .build()
 
-            val response = client.newCall(request).execute()
+            client.newCall(request).execute().use { response ->
+                if (!response.isSuccessful) return@use
 
-            print(response)
-        //}
+                val result = response.body!!.string()
+                val jsonObject = JSONObject(result)
+                var url = jsonObject.getString("link")
+
+                scope.launch(Dispatchers.Main) {
+                    callback(url)
+                }
+            }
+        }
+
+    }
+
+    fun getJsonData(assets: AssetManager, fileName: String): JSONObject {
+        val inputStream: InputStream = assets.open(fileName)
+        var json = inputStream.bufferedReader().use { it.readText() }
+
+        return JSONObject(json.substring(json.indexOf("{"), json.lastIndexOf("}") + 1))
+
     }
 }
