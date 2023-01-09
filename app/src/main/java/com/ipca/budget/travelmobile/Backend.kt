@@ -146,7 +146,7 @@ object Backend {
                 .addHeader("X-RapidAPI-Host", "best-booking-com-hotel.p.rapidapi.com")
                 .build()
 
-            client.newCall(request).execute().use { response ->
+            /*client.newCall(request).execute().use { response ->
                 if (!response.isSuccessful) return@use
 
                 val result = response.body!!.string()
@@ -156,7 +156,7 @@ object Backend {
                 scope.launch(Dispatchers.Main) {
                     callback(url)
                 }
-            }
+            }*/
         }
 
     }
