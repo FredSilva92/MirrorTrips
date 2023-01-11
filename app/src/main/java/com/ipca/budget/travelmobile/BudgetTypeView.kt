@@ -6,7 +6,7 @@ import android.os.Bundle
 import androidx.constraintlayout.widget.ConstraintLayout
 import com.ipca.budget.travelmobile.entities.DataTypePrice
 import com.ipca.budget.travelmobile.entities.DataTypeText
-//qjdflewfjefherferk
+
 class BudgetTypeView : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
