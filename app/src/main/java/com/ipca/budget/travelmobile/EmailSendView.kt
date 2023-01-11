@@ -58,6 +58,12 @@ class EmailSendView : AppCompatActivity() {
                         val toast = Toast.makeText(applicationContext, text, duration)
                         toast.show()
                     }
+                } else {
+                    val text = "It was not possible to send email"
+                    val duration = Toast.LENGTH_SHORT
+
+                    val toast = Toast.makeText(applicationContext, text, duration)
+                    toast.show()
                 }
             }
 
