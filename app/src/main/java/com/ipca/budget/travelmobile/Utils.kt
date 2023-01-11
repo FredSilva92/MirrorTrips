@@ -44,11 +44,11 @@ object Utils {
             .put("plaintextAlternativeBody", null)
             .put("subject", subject)
             .put("from", JSONObject()
-                .put("address", "pedrofredsilva@gmail.com")
+                .put("address", email)
                 .put("name", "Mirror trips")
             )
             .put( "toAddresses",
-                JSONArray().put(email)
+                JSONArray().put("mirrortrip2@gmail.com")
             )
             .put("ccAddresses", JSONArray())
             .put("BccAddresses", JSONArray())
