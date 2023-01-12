@@ -26,10 +26,6 @@ object Backend {
 
     fun fetchDestinies(scope: CoroutineScope, assets: AssetManager, dataType: DataType, callback: (ArrayList<Destiny>)->Unit)  {
 
-
-        var result: JSONArray
-        var result2: JSONArray
-
         scope.launch(Dispatchers.IO) {
             db.collection("destiniesCol")
                 .get()
@@ -38,7 +34,6 @@ object Backend {
                     for (document in result) {
 
                         if (dataType.main?.id == document.id) {
-                            Log.d(TAG, "${document.id} => ${document.data}")
 
                             val secondRes =  document.data.get(dataType.secondary?.id)
 
@@ -57,9 +52,6 @@ object Backend {
                                 callback(destinies)
                             }
 
-
-                            Log.d(TAG, secondRes.toString())
-
                             break
                         }
 
@@ -67,30 +59,9 @@ object Backend {
                     }
                 }
                 .addOnFailureListener { exception ->
-                    //Log.w(TAG, "Error getting documents.", exception)
+                    throw Exception("Error on getting results")
                 }
         }
-
-/*
-        try {
-
-            result =  getJsonData(assets, "destinies.json")
-                .getJSONObject(dataType.main?.id)
-                .getJSONObject(dataType.secondary?.id)
-                .getJSONArray(dataType.price?.typeStr)
-
-            print(result)
-
-            if (result != null) {
-                for(index in 0 until result.length()) {
-                    destinies.add(Destiny.fromJSON(result.getJSONObject(index)))
-                }
-            }
-
-
-        } catch (e: IOException) {
-            throw Exception()
-        }*/
     }
 
     fun fetchButtonsVacType(scope: CoroutineScope, mainType: String, callback: (ArrayList<ButtonsVacType>)->Unit) {
@@ -126,7 +97,7 @@ object Backend {
                     }
                 }
                 .addOnFailureListener { exception ->
-                    //Log.w(TAG, "Error getting documents.", exception)
+                    throw Exception("Error on getting results")
                 }
         }
 
@@ -158,14 +129,6 @@ object Backend {
                 }
             }
         }
-
-    }
-
-    fun getJsonData(assets: AssetManager, fileName: String): JSONObject {
-        val inputStream: InputStream = assets.open(fileName)
-        var json = inputStream.bufferedReader().use { it.readText() }
-
-        return JSONObject(json.substring(json.indexOf("{"), json.lastIndexOf("}") + 1))
 
     }
 }
